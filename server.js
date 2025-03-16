@@ -16,12 +16,17 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+app.use(
+    cors({
+      origin: "http://localhost:3000", 
+      credentials: true, 
+    })
+);
 
 // Session Setup 
 app.use(
     session({
-        secret: process.env.SESSION_SECRET || "lovely1211",
+        secret: process.env.SESSION_SECRET,
         resave: false,
         saveUninitialized: false,
         cookie: { secure: false }, 

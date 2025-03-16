@@ -1,5 +1,4 @@
 const axios = require("axios");
-const Video = require("../models/videos");
 
 //  Get video details from YouTube API
 exports.getVideo = async (req, res) => {
@@ -54,6 +53,7 @@ exports.updateVideoTitle = async (req, res) => {
 
         res.json({ message: "Title updated successfully", data: response.data });
     } catch (err) {
+        console.log(err)
         res.status(500).json({ message: err.message });
     }
 };
