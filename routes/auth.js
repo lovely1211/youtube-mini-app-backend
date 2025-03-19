@@ -7,19 +7,32 @@ router.get(
     "/auth/google",
     passport.authenticate("google", {
         scope: ["profile", "email", "https://www.googleapis.com/auth/youtube.force-ssl"],
+        accessType: "offline",
+        prompt: "consent",
     })
 );
 
-// **Callback Route**
+// **Google Callback Route **
 router.get(
     "/auth/callback",
-    passport.authenticate("google", { failureRedirect: "/" }),
+    passport.authenticate("google", { failureRedirect: "/", failureFlash: true }),
     (req, res) => {
-        res.redirect("/dashboard");
+      if (!req.user) {
+        console.log("User authentication failed");
+        return res.redirect("/?error=authentication_failed");
+      }
+
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.redirect("/?error=session_save_failed");
+        }
+        res.redirect(`http://localhost:3000/auth?authToken=${req.user.accessToken}`);
+      });
     }
 );
-
-// **Logout Route **
+  
+// **Logout Route**
 router.get("/logout", (req, res, next) => {
     req.logout((err) => {
         if (err) return next(err);

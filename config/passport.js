@@ -7,39 +7,48 @@ passport.use(
         {
             clientID: process.env.CLIENT_ID,
             clientSecret: process.env.CLIENT_SECRET,
-            callbackURL: "/auth/callback",
+            callbackURL: "http://localhost:5000/api/auth/callback", 
+            passReqToCallback: true,
+            scope: ["profile", "email", "https://www.googleapis.com/auth/youtube.force-ssl"]
         },
-        async (accessToken, refreshToken, profile, done) => {
+        async (req, accessToken, refreshToken, profile, done) => {
             try {
                 let user = await User.findOne({ googleId: profile.id });
 
                 if (!user) {
-                    user = await User.create({
+                    user = new User({
                         googleId: profile.id,
                         name: profile.displayName,
                         email: profile.emails[0].value,
+                        profilePicture: profile.photos[0].value,
                         accessToken: accessToken,
                     });
+                    await user.save();
                 } else {
-                    user.accessToken = accessToken;
+                    user.accessToken = accessToken; 
                     await user.save();
                 }
 
                 return done(null, user);
-            } catch (err) {
-                return done(err, null);
+            } catch (error) {
+                return done(error, null);
             }
         }
     )
 );
 
+// **Session Serialization**
 passport.serializeUser((user, done) => {
-    done(null, user.id);
+    done(null, { id: user.id, accessToken: user.accessToken });
 });
 
-passport.deserializeUser(async (id, done) => {
+// **Session Deserialization**
+passport.deserializeUser(async (data, done) => {
     try {
-        const user = await User.findById(id);
+        const user = await User.findById(data.id);
+        if (!user) return done(null, false);
+
+        user.accessToken = data.accessToken;
         done(null, user);
     } catch (err) {
         done(err, null);
